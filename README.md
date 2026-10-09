@@ -88,12 +88,18 @@ Ao clicar no botão **"Restaurar Livro"** ou selecionar o preset **"★ Livro (E
 - **Alvo Desejado**: $d = 0.85$
 - **Taxa de Aprendizado**: $\eta = 0.30$
 - **Termo de Momento**: $\alpha = 0.00$
-- **Matriz de Pesos Inicial $W^{(1)}$ (3x3)**:
-  $$W^{(1)} = \begin{bmatrix} 0.2 & 0.4 & 0.5 \\\\ 0.3 & 0.6 & 0.7 \\\\ 0.4 & 0.8 & 0.3 \end{bmatrix}$$
-- **Matriz de Pesos Inicial $W^{(2)}$ (2x4)**:
-  $$W^{(2)} = \begin{bmatrix} -0.7 & 0.6 & 0.2 & 0.7 \\\\ -0.3 & 0.7 & 0.2 & 0.8 \end{bmatrix}$$
-- **Matriz de Pesos Inicial $W^{(3)}$ (1x3)**:
-  $$W^{(3)} = \begin{bmatrix} 0.1 & 0.8 & 0.5 \end{bmatrix}$$
+- **Matriz de Pesos Inicial $W^{(1)}$ (3x3):**
+  $$
+  W^{(1)} = \begin{bmatrix} 0.2 & 0.4 & 0.5 \\ 0.3 & 0.6 & 0.7 \\ 0.4 & 0.8 & 0.3 \end{bmatrix}
+  $$
+- **Matriz de Pesos Inicial $W^{(2)}$ (2x4):**
+  $$
+  W^{(2)} = \begin{bmatrix} -0.7 & 0.6 & 0.2 & 0.7 \\ -0.3 & 0.7 & 0.2 & 0.8 \end{bmatrix}
+  $$
+- **Matriz de Pesos Inicial $W^{(3)}$ (1x3):**
+  $$
+  W^{(3)} = \begin{bmatrix} 0.1 & 0.8 & 0.5 \end{bmatrix}
+  $$
 
 ---
 
