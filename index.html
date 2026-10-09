@@ -1,0 +1,1704 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador Didático de PMC - Livro Silva, Spatti & Flauzino (Capítulo 5)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0e17;
+      --bg-secondary: #111827;
+      --bg-card: rgba(17, 24, 39, 0.88);
+      --bg-glass: rgba(30, 41, 59, 0.65);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-highlight: rgba(99, 102, 241, 0.35);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-primary: #6366f1;
+      --accent-secondary: #06b6d4;
+      --accent-forward: #10b981;
+      --accent-backward: #f43f5e;
+      --accent-warning: #f59e0b;
+      --node-input: #0ea5e9;
+      --node-h1: #8b5cf6;
+      --node-h2: #a855f7;
+      --node-output: #ec4899;
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(ellipse at 15% 10%, rgba(99, 102, 241, 0.12) 0%, transparent 45%),
+        radial-gradient(ellipse at 85% 90%, rgba(6, 182, 212, 0.09) 0%, transparent 45%),
+        radial-gradient(ellipse at 50% 50%, rgba(236, 72, 153, 0.05) 0%, transparent 60%);
+      background-attachment: fixed;
+    }
+
+    header {
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      backdrop-filter: blur(12px);
+      background: rgba(10, 14, 23, 0.85);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .badge-chip {
+      background: linear-gradient(135deg, #4f46e5, #06b6d4);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      padding: 0.3rem 0.65rem;
+      border-radius: 6px;
+      text-transform: uppercase;
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+    }
+
+    h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    h1 span {
+      background: linear-gradient(to right, #ffffff, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .phase-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.4rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.825rem;
+      font-weight: 600;
+      background: var(--bg-glass);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .phase-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .phase-indicator.forward .phase-dot {
+      background: var(--accent-forward);
+      box-shadow: 0 0 10px var(--accent-forward);
+    }
+
+    .phase-indicator.backward .phase-dot {
+      background: var(--accent-backward);
+      box-shadow: 0 0 10px var(--accent-backward);
+    }
+
+    .phase-indicator.idle .phase-dot {
+      background: var(--accent-secondary);
+      box-shadow: 0 0 8px var(--accent-secondary);
+    }
+
+    main {
+      flex: 1;
+      padding: 1.25rem 2rem;
+      display: grid;
+      grid-template-columns: 370px 1fr 440px;
+      gap: 1.5rem;
+      max-width: 1920px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    @media (max-width: 1440px) {
+      main {
+        grid-template-columns: 350px 1fr;
+      }
+      .col-math {
+        grid-column: span 2;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+      .col-math {
+        grid-column: span 1;
+      }
+    }
+
+    /* CARDS */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      overflow: hidden;
+      backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      transition: border-color 0.25s ease;
+    }
+
+    .card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .card-header {
+      padding: 0.9rem 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .card-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-body {
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.15rem;
+      overflow-y: auto;
+    }
+
+    /* CONTROL INPUTS */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .form-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .form-control {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      padding: 0.55rem 0.85rem;
+      outline: none;
+      transition: all 0.2s ease;
+      width: 100%;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.5rem;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .btn {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.6rem 0.9rem;
+      border-radius: 8px;
+      font-family: var(--font-sans);
+      font-size: 0.825rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      user-select: none;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      color: white;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+      filter: brightness(1.1);
+    }
+
+    .btn-forward {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .btn-forward:hover {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: #34d399;
+    }
+
+    .btn-backward {
+      background: rgba(244, 63, 94, 0.15);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.3);
+    }
+    .btn-backward:hover {
+      background: rgba(244, 63, 94, 0.25);
+      border-color: #fb7185;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: #cbd5e1;
+      border: 1px solid var(--border-color);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    /* CENTER CANVAS STAGE */
+    .network-stage-container {
+      position: relative;
+      flex: 1;
+      min-height: 520px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #networkCanvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      background: radial-gradient(circle at 50% 50%, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.85) 100%);
+      cursor: crosshair;
+    }
+
+    .canvas-overlay-bar {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      right: 1rem;
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .canvas-legend {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.45rem 0.8rem;
+      display: flex;
+      gap: 0.9rem;
+      font-size: 0.725rem;
+      font-weight: 600;
+      backdrop-filter: blur(8px);
+      pointer-events: auto;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .legend-color {
+      width: 9px;
+      height: 9px;
+      border-radius: 3px;
+    }
+
+    .step-badge {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border-highlight);
+      border-radius: 8px;
+      padding: 0.45rem 0.9rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: #38bdf8;
+      backdrop-filter: blur(8px);
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* MATH & DETAILS PANEL */
+    .math-section {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .math-section.active-forward {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.03);
+    }
+
+    .math-section.active-backward {
+      border-color: rgba(244, 63, 94, 0.4);
+      background: rgba(244, 63, 94, 0.03);
+    }
+
+    .math-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    .formula-box {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 6px;
+      padding: 0.6rem 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #cbd5e1;
+      line-height: 1.45;
+      border-left: 3px solid var(--accent-primary);
+      overflow-x: auto;
+    }
+
+    .formula-box code {
+      color: #38bdf8;
+    }
+
+    .formula-box .highlight-val {
+      color: #f43f5e;
+      font-weight: bold;
+    }
+
+    .formula-box .highlight-green {
+      color: #34d399;
+      font-weight: bold;
+    }
+
+    .formula-box .highlight-cyan {
+      color: #22d3ee;
+      font-weight: bold;
+    }
+
+    /* METRICS BAR */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.6rem;
+    }
+
+    .metric-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.6rem 0.8rem;
+    }
+
+    .metric-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .metric-value {
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-top: 0.2rem;
+    }
+
+    /* ERROR HISTORY CANVAS */
+    #chartCanvas {
+      width: 100%;
+      height: 100px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+    }
+
+    /* TOOLTIP / HOVER CARD */
+    #hoverTooltip {
+      position: absolute;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--accent-primary);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      border-radius: 8px;
+      padding: 0.6rem 0.85rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      pointer-events: none;
+      display: none;
+      z-index: 100;
+      max-width: 280px;
+      line-height: 1.4;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.68rem;
+      font-weight: 700;
+    }
+
+    .pill-green { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .pill-red { background: rgba(244, 63, 94, 0.2); color: #fb7185; }
+    .pill-book { background: rgba(99, 102, 241, 0.25); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.4); }
+
+    /* CUSTOM SCROLLBAR */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.1);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-area">
+      <div class="badge-chip">Silva, Spatti & Flauzino</div>
+      <h1><span>Simulador de PMC & Backpropagation (Capítulo 5 - Exemplo Figura 5.5)</span></h1>
+    </div>
+    <div class="header-status">
+      <div class="phase-indicator idle" id="phaseIndicator">
+        <div class="phase-dot"></div>
+        <span id="phaseText">Estado: Inicial</span>
+      </div>
+      <button class="btn btn-secondary" id="btnReset" title="Reiniciar com os valores exatos do livro">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        Restaurar Livro
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN VIEW -->
+  <main>
+    <!-- COLUNA ESQUERDA: PARÂMETROS E CONTROLES -->
+    <section class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
+          Parâmetros do Modelo
+        </div>
+        <span class="pill pill-book">Livro: 2-3-2-1</span>
+      </div>
+      <div class="card-body">
+        
+        <!-- PRESETS -->
+        <div class="form-group">
+          <label class="form-label">Cenários de Inicialização</label>
+          <div class="btn-group">
+            <button class="btn btn-primary" style="flex:1.4; padding:0.5rem 0.6rem; font-size:0.75rem;" onclick="loadPreset('book')">
+              ★ Livro (Exemplo Fig. 5.5)
+            </button>
+            <button class="btn btn-secondary" style="flex:1; padding:0.5rem 0.6rem; font-size:0.75rem;" onclick="loadPreset('random')">
+              Aleatório
+            </button>
+          </div>
+        </div>
+
+        <!-- ENTRADAS E SAÍDA DESEJADA -->
+        <div class="form-group">
+          <label class="form-label">Entradas (X) e Alvo Desejado (d)</label>
+          <div class="grid-3">
+            <div>
+              <span style="font-size:0.72rem; color:var(--text-muted); font-family:var(--font-mono);">x₁</span>
+              <input type="number" id="in_x1" class="form-control" step="0.05" value="0.30">
+            </div>
+            <div>
+              <span style="font-size:0.72rem; color:var(--text-muted); font-family:var(--font-mono);">x₂</span>
+              <input type="number" id="in_x2" class="form-control" step="0.05" value="0.70">
+            </div>
+            <div>
+              <span style="font-size:0.72rem; color:#f43f5e; font-family:var(--font-mono); font-weight:bold;">Alvo (d)</span>
+              <input type="number" id="in_d" class="form-control" step="0.05" value="0.85" style="border-color: rgba(244,63,94,0.4);">
+            </div>
+          </div>
+          <span style="font-size:0.7rem; color:var(--text-muted); margin-top:2px;">
+            Bias do livro: <code>x₀ = -1</code> com peso sináptico <code>Wⱼ,₀</code>
+          </span>
+        </div>
+
+        <!-- HIPERPARÂMETROS -->
+        <div class="form-group">
+          <label class="form-label">Hiperparâmetros de Treinamento</label>
+          <div class="grid-2">
+            <div>
+              <span style="font-size:0.72rem; color:var(--text-muted); font-family:var(--font-mono);">Taxa Aprend. (η)</span>
+              <input type="number" id="in_eta" class="form-control" step="0.05" min="0.01" max="2.0" value="0.30">
+            </div>
+            <div>
+              <span style="font-size:0.72rem; color:var(--text-muted); font-family:var(--font-mono);">Momento (α)</span>
+              <input type="number" id="in_alpha" class="form-control" step="0.05" min="0.0" max="0.95" value="0.00">
+            </div>
+          </div>
+        </div>
+
+        <!-- CRITÉRIO DE PARADA CONFORME O LIVRO (Eq. 5.40) -->
+        <div class="form-group">
+          <label class="form-label">Critério de Parada (Precisão Requerida ε)</label>
+          <div class="grid-2">
+            <div>
+              <span style="font-size:0.72rem; color:var(--accent-forward); font-family:var(--font-mono);">Precisão (ε)</span>
+              <input type="number" id="in_epsilon" class="form-control" step="0.00001" min="0.000001" max="0.1" value="0.00010" style="border-color: rgba(16, 185, 129, 0.4);">
+            </div>
+            <div>
+              <span style="font-size:0.72rem; color:var(--text-muted); font-family:var(--font-mono);">Máx. Épocas</span>
+              <input type="number" id="in_max_epochs" class="form-control" step="500" min="50" max="50000" value="5000">
+            </div>
+          </div>
+          <div style="font-size:0.7rem; color:var(--text-muted); margin-top:2px;">
+            Condição: <code>E = ½(d - y)² &le; ε</code> ou <code>|E(t) - E(t-1)| &le; ε</code>
+          </div>
+        </div>
+
+        <!-- ATIVAÇÃO -->
+        <div class="form-group">
+          <label class="form-label">Função de Ativação g(I)</label>
+          <select id="in_activation" class="form-control">
+            <option value="tanh" selected>Tangente Hiperbólica: tanh(I) [Padrão do Livro]</option>
+            <option value="sigmoid">Sigmoide Logística: 1 / (1 + e^-I)</option>
+          </select>
+        </div>
+
+        <hr style="border:0; border-top:1px solid var(--border-color); margin: 0.2rem 0;">
+
+        <!-- CONTROLES DE FLUXO DE EXECUÇÃO -->
+        <div class="form-group">
+          <label class="form-label">Passo a Passo do Backpropagation</label>
+          <div class="grid-2">
+            <button class="btn btn-forward" id="btnStepForward" onclick="stepForwardInteractive()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              1. Forward ➔
+            </button>
+            <button class="btn btn-backward" id="btnStepBackward" onclick="stepBackwardInteractive()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+              2. Backward ⬅
+            </button>
+          </div>
+          <button class="btn btn-primary" id="btnFullEpoch" onclick="runSingleFullEpoch()" style="margin-top:0.4rem;">
+            Executar 1 Ciclo Completo (Epoch)
+          </button>
+        </div>
+
+        <!-- AUTO TREINO -->
+        <div class="form-group">
+          <label class="form-label">Treinamento Contínuo</label>
+          <div class="grid-2">
+            <button class="btn btn-secondary" id="btnAutoTrain" onclick="toggleAutoTrain()">
+              ▶ Iniciar Treino
+            </button>
+            <button class="btn btn-secondary" onclick="runTrainBatch(50)">
+              +50 Épocas
+            </button>
+          </div>
+        </div>
+
+        <!-- GRÁFICO HISTÓRICO DE ERRO -->
+        <div class="form-group">
+          <label class="form-label">
+            Evolução do Erro E = ½ (d - y)²
+            <span id="chartMinErr" style="font-family:var(--font-mono); font-size:0.7rem; color:var(--accent-forward);"></span>
+          </label>
+          <canvas id="chartCanvas" width="310" height="100"></canvas>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- COLUNA CENTRAL: DIAGRAMA VISUAL DA REDE NEURAL -->
+    <section class="card" style="position:relative;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          Topologia Exata da Figura 5.5: 2 ➔ 3 ➔ 2 ➔ 1
+        </div>
+        <div style="font-size:0.75rem; color:var(--text-muted);">
+          Passe o mouse nos nós ou sinapses para raio-x
+        </div>
+      </div>
+
+      <div class="network-stage-container">
+        <canvas id="networkCanvas"></canvas>
+        <div id="hoverTooltip"></div>
+
+        <div class="canvas-overlay-bar">
+          <div class="canvas-legend">
+            <div class="legend-item">
+              <span class="legend-color" style="background:var(--node-input);"></span>
+              <span>Entrada (X)</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color" style="background:var(--node-h1);"></span>
+              <span>Oculta 1 (H⁽¹⁾)</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color" style="background:var(--node-h2);"></span>
+              <span>Oculta 2 (H⁽²⁾)</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color" style="background:var(--node-output);"></span>
+              <span>Saída (Y⁽³⁾)</span>
+            </div>
+          </div>
+
+          <div class="step-badge" id="stepSubBadge">
+            <span>Aguardando ação...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- BARRA INFERIOR DE MÉTRICAS -->
+      <div style="padding: 0.85rem 1.25rem; border-top:1px solid var(--border-color); background: rgba(0,0,0,0.25);">
+        <div class="metrics-grid" style="grid-template-columns: repeat(5, 1fr);">
+          <div class="metric-card">
+            <div class="metric-title">Época (t)</div>
+            <div class="metric-value" id="dispEpoch">0</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Saída Obtida y⁽³⁾</div>
+            <div class="metric-value" id="dispOutput" style="color:var(--accent-secondary);">0.6432</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Erro Linear e = d - y</div>
+            <div class="metric-value" id="dispLinearError" style="color:var(--accent-warning);">+0.2068</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Erro Quadrático E</div>
+            <div class="metric-value" id="dispQuadError" style="color:var(--accent-backward);">0.02138</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Status / Precisão ε</div>
+            <div class="metric-value" id="dispConvergence" style="font-size:0.85rem; color:#94a3b8; line-height:1.2; margin-top:0.4rem;">
+              E > ε (Em treino)
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COLUNA DIREITA: RAIO-X MATEMÁTICO DETALHADO CONFORME O LIVRO -->
+    <section class="card col-math">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10"/></svg>
+          Equações Conforme o Livro (Capítulo 5)
+        </div>
+      </div>
+
+      <div class="card-body">
+        
+        <!-- FASE FORWARD EXPLICADA -->
+        <div class="math-section" id="boxForwardMath">
+          <div class="math-header">
+            <span style="color:var(--accent-forward);">1. FASE FORWARD (Propagação Adiante)</span>
+            <span class="pill pill-green">Sem alteração de pesos</span>
+          </div>
+
+          <div class="formula-box" id="calcL1Forward">
+            <strong>1ª Camada Oculta: Iⱼ⁽¹⁾ = ∑ Wⱼᵢ⁽¹⁾ · xᵢ (x₀ = -1)</strong><br>
+            <span id="txtL1_calc">...</span>
+          </div>
+
+          <div class="formula-box" id="calcL2Forward">
+            <strong>2ª Camada Oculta: Iⱼ⁽²⁾ = ∑ Wⱼᵢ⁽²⁾ · Yᵢ⁽¹⁾ (Y₀⁽¹⁾ = -1)</strong><br>
+            <span id="txtL2_calc">...</span>
+          </div>
+
+          <div class="formula-box" id="calcL3Forward">
+            <strong>Camada de Saída: I₁⁽³⁾ = ∑ W₁ᵢ⁽³⁾ · Yᵢ⁽²⁾ (Y₀⁽²⁾ = -1)</strong><br>
+            <span id="txtL3_calc">...</span><br>
+            <code>y₁ = g(I₁⁽³⁾) = <span id="txtYout" class="highlight-green">0.6432</span></code><br>
+            <code>Erro e = d - y = <span id="txtErrorLinear" class="highlight-val">...</span></code>
+          </div>
+        </div>
+
+        <!-- FASE BACKWARD EXPLICADA -->
+        <div class="math-section" id="boxBackwardMath">
+          <div class="math-header">
+            <span style="color:var(--accent-backward);">2. FASE BACKWARD (Retropropagação)</span>
+            <span class="pill pill-red">Gradientes δ e Ajuste ΔW</span>
+          </div>
+
+          <div class="formula-box" id="calcDeltaOut">
+            <strong>1. Gradiente Local de Saída (Equação 5.15):</strong><br>
+            <code>δ₁⁽³⁾ = (d₁ - Y₁⁽³⁾) · g'(I₁⁽³⁾)</code><br>
+            <span id="txtDelta3">δ₁⁽³⁾ = ...</span><br>
+            <code>ΔW₁ᵢ⁽³⁾ = η · δ₁⁽³⁾ · Yᵢ⁽²⁾</code>
+          </div>
+
+          <div class="formula-box" id="calcDeltaL2">
+            <strong>2. Gradiente da 2ª Camada (Equação 5.26):</strong><br>
+            <code>δⱼ⁽²⁾ = g'(Iⱼ⁽²⁾) · [ δ₁⁽³⁾ · W₁,ⱼ⁽³⁾ ]</code><br>
+            <span id="txtDelta2_calc">...</span><br>
+            <code>ΔWⱼᵢ⁽²⁾ = η · δⱼ⁽²⁾ · Yᵢ⁽¹⁾</code>
+          </div>
+
+          <div class="formula-box" id="calcDeltaL1">
+            <strong>3. Gradiente da 1ª Camada (Equação 5.37):</strong><br>
+            <code>δⱼ⁽¹⁾ = g'(Iⱼ⁽¹⁾) · ∑ [ δₖ⁽²⁾ · Wₖ,ⱼ⁽²⁾ ]</code><br>
+            <span id="txtDelta1_calc">...</span><br>
+            <code>ΔWⱼᵢ⁽¹⁾ = η · δⱼ⁽¹⁾ · xᵢ</code>
+          </div>
+        </div>
+
+        <!-- MATRIZES DE PESOS DO LIVRO -->
+        <div class="math-section">
+          <div class="math-header">
+            <span style="color:var(--text-main);">Matrizes de Pesos Atuais W⁽¹⁾, W⁽²⁾, W⁽³⁾</span>
+          </div>
+          <div style="font-family:var(--font-mono); font-size:0.75rem; color:#94a3b8; display:flex; flex-direction:column; gap:0.5rem;" id="matricesDisplay">
+            <!-- Gerado via JS -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <script>
+    /* ==========================================================================
+       TOPOLOGIA EXATA DO LIVRO (Figura 5.5, páginas 97-108):
+       - 2 Entradas (x1, x2) + Entrada de limiar x0 = -1
+       - 3 Neurônios na 1ª Camada Oculta: W(1) de dimensões (3 x 3)
+       - 2 Neurônios na 2ª Camada Oculta: W(2) de dimensões (2 x 4)
+       - 1 Neurônio na Camada de Saída:   W(3) de dimensões (1 x 3)
+       ========================================================================== */
+    const bookDefaults = {
+      x1: 0.30,
+      x2: 0.70,
+      d: 0.85,
+      eta: 0.30,
+      alpha: 0.00,
+      activation: 'tanh',
+
+      // W(1) - 3 neurônios x 3 entradas (x0=-1, x1, x2)
+      // Linha 1: [0.2, 0.4, 0.5]
+      // Linha 2: [0.3, 0.6, 0.7]
+      // Linha 3: [0.4, 0.8, 0.3]
+      W1: [
+        [0.2, 0.4, 0.5],
+        [0.3, 0.6, 0.7],
+        [0.4, 0.8, 0.3]
+      ],
+
+      // W(2) - 2 neurônios x 4 entradas (Y0(1)=-1, Y1(1), Y2(1), Y3(1))
+      // Linha 1: [-0.7, 0.6, 0.2, 0.7]
+      // Linha 2: [-0.3, 0.7, 0.2, 0.8]
+      W2: [
+        [-0.7, 0.6, 0.2, 0.7],
+        [-0.3, 0.7, 0.2, 0.8]
+      ],
+
+      // W(3) - 1 neurônio x 3 entradas (Y0(2)=-1, Y1(2), Y2(2))
+      // Linha 1: [0.1, 0.8, 0.5]
+      W3: [
+        [0.1, 0.8, 0.5]
+      ]
+    };
+
+    const netState = {
+      x1: 0.30,
+      x2: 0.70,
+      d: 0.85,
+      // Hiperparâmetros e Critérios de Parada
+      eta: 0.30,
+      alpha: 0.00,
+      epsilon: 0.00010,
+      max_epochs: 5000,
+      activation: 'tanh',
+
+      W1: JSON.parse(JSON.stringify(bookDefaults.W1)),
+      W2: JSON.parse(JSON.stringify(bookDefaults.W2)),
+      W3: JSON.parse(JSON.stringify(bookDefaults.W3)),
+
+      // Armazenamento para termo de momento
+      prev_dW1: [[0,0,0],[0,0,0],[0,0,0]],
+      prev_dW2: [[0,0,0,0],[0,0,0,0]],
+      prev_dW3: [[0,0,0]],
+
+      // Valores calculados da Camada 1
+      I1: [0, 0, 0],
+      Y1: [0, 0, 0],
+
+      // Valores calculados da Camada 2
+      I2: [0, 0],
+      Y2: [0, 0],
+
+      // Valores calculados da Camada 3 (Saída)
+      I3: [0],
+      Y3: [0],
+
+      // Erros
+      error_lin: 0,
+      error_quad: 0,
+      prev_error_quad: null,
+      converged: false,
+      stopReason: '',
+
+      // Gradientes Locais (deltas)
+      delta3: [0],
+      delta2: [0, 0],
+      delta1: [0, 0, 0],
+
+      // Ajustes dW da iteração atual
+      dW1: [[0,0,0],[0,0,0],[0,0,0]],
+      dW2: [[0,0,0,0],[0,0,0,0]],
+      dW3: [[0,0,0]],
+
+      epoch: 0,
+      phase: 'idle',
+      historyLoss: [],
+      maxHistory: 50
+    };
+
+    let autoTrainTimer = null;
+    let animPulse = 0;
+
+    /* ==========================================================================
+       FUNÇÕES DE ATIVAÇÃO E DERIVADAS
+       ========================================================================== */
+    function act(u) {
+      if (netState.activation === 'tanh') {
+        return Math.tanh(u);
+      } else {
+        return 1.0 / (1.0 + Math.exp(-u));
+      }
+    }
+
+    function actDeriv(u, y) {
+      if (netState.activation === 'tanh') {
+        // g'(I) = 1 - tanh^2(I) = 1 - y^2
+        return 1.0 - (y * y);
+      } else {
+        // g'(I) = y * (1 - y)
+        return y * (1.0 - y);
+      }
+    }
+
+    /* ==========================================================================
+       FASE FORWARD (PROPAGAÇÃO ADIANTE - Equações 5.1 a 5.6 do Livro)
+       ========================================================================== */
+    function computeForward() {
+      readInputs();
+
+      // Vetor de entrada aumentado com bias x0 = -1
+      const x_aug = [-1.0, netState.x1, netState.x2];
+
+      // 1ª Camada Oculta: 3 neurônios
+      for (let j = 0; j < 3; j++) {
+        let sum = 0;
+        for (let i = 0; i < 3; i++) {
+          sum += netState.W1[j][i] * x_aug[i];
+        }
+        netState.I1[j] = sum;
+        netState.Y1[j] = act(sum);
+      }
+
+      // Vetor de saída da 1ª camada aumentado com Y0(1) = -1
+      const Y1_aug = [-1.0, netState.Y1[0], netState.Y1[1], netState.Y1[2]];
+
+      // 2ª Camada Oculta: 2 neurônios
+      for (let j = 0; j < 2; j++) {
+        let sum = 0;
+        for (let i = 0; i < 4; i++) {
+          sum += netState.W2[j][i] * Y1_aug[i];
+        }
+        netState.I2[j] = sum;
+        netState.Y2[j] = act(sum);
+      }
+
+      // Vetor de saída da 2ª camada aumentado com Y0(2) = -1
+      const Y2_aug = [-1.0, netState.Y2[0], netState.Y2[1]];
+
+      // 3ª Camada (Saída): 1 neurônio
+      let sumOut = 0;
+      for (let i = 0; i < 3; i++) {
+        sumOut += netState.W3[0][i] * Y2_aug[i];
+      }
+      netState.I3[0] = sumOut;
+      netState.Y3[0] = act(sumOut);
+
+      // Erro de saída: e = d - y e E = 0.5 * e^2
+      netState.error_lin = netState.d - netState.Y3[0];
+      netState.error_quad = 0.5 * Math.pow(netState.error_lin, 2);
+
+      netState.phase = 'forward_done';
+      updateUI();
+    }
+
+    /* ==========================================================================
+       FASE BACKWARD (PROPAGAÇÃO REVERSA - Equações 5.15 a 5.39 do Livro)
+       ========================================================================== */
+    function computeBackward() {
+      if (netState.phase !== 'forward_done') {
+        computeForward();
+      }
+
+      const x_aug = [-1.0, netState.x1, netState.x2];
+      const Y1_aug = [-1.0, netState.Y1[0], netState.Y1[1], netState.Y1[2]];
+      const Y2_aug = [-1.0, netState.Y2[0], netState.Y2[1]];
+
+      // 1. Gradiente Local na Camada de Saída (Equação 5.15):
+      // delta1(3) = (d1 - Y1(3)) * g'(I1(3))
+      const gPrimeOut = actDeriv(netState.I3[0], netState.Y3[0]);
+      netState.delta3[0] = netState.error_lin * gPrimeOut;
+
+      // Ajuste dos pesos da camada 3: Delta W_1,i(3) = eta * delta1(3) * Y_i(2)
+      for (let i = 0; i < 3; i++) {
+        netState.dW3[0][i] = (netState.eta * netState.delta3[0] * Y2_aug[i]) + 
+                             (netState.alpha * netState.prev_dW3[0][i]);
+      }
+
+      // 2. Gradientes Locais na 2ª Camada Oculta (Equação 5.26):
+      // delta_j(2) = g'(I_j(2)) * [ delta1(3) * W_1,j(3) ]  (onde j vai de 1 a 2)
+      for (let j = 0; j < 2; j++) {
+        const gPrime2 = actDeriv(netState.I2[j], netState.Y2[j]);
+        // Note que o peso no W3 é indexado por j+1 pois W3[0][0] é o bias (-1)
+        const weightBack = netState.W3[0][j + 1];
+        netState.delta2[j] = gPrime2 * (netState.delta3[0] * weightBack);
+
+        // Ajuste dos pesos da camada 2: Delta W_j,i(2) = eta * delta_j(2) * Y_i(1)
+        for (let i = 0; i < 4; i++) {
+          netState.dW2[j][i] = (netState.eta * netState.delta2[j] * Y1_aug[i]) + 
+                               (netState.alpha * netState.prev_dW2[j][i]);
+        }
+      }
+
+      // 3. Gradientes Locais na 1ª Camada Oculta (Equação 5.37):
+      // delta_j(1) = g'(I_j(1)) * sum_k [ delta_k(2) * W_k,j(2) ] (onde j vai de 1 a 3)
+      for (let j = 0; j < 3; j++) {
+        const gPrime1 = actDeriv(netState.I1[j], netState.Y1[j]);
+        let sumBack = 0;
+        for (let k = 0; k < 2; k++) {
+          sumBack += netState.delta2[k] * netState.W2[k][j + 1];
+        }
+        netState.delta1[j] = gPrime1 * sumBack;
+
+        // Ajuste dos pesos da camada 1: Delta W_j,i(1) = eta * delta_j(1) * x_i
+        for (let i = 0; i < 3; i++) {
+          netState.dW1[j][i] = (netState.eta * netState.delta1[j] * x_aug[i]) + 
+                               (netState.alpha * netState.prev_dW1[j][i]);
+        }
+      }
+
+      // Aplicação dos ajustes nos pesos W_novo = W_antigo + Delta W
+      for (let i = 0; i < 3; i++) {
+        netState.W3[0][i] += netState.dW3[0][i];
+        netState.prev_dW3[0][i] = netState.dW3[0][i];
+      }
+
+      for (let j = 0; j < 2; j++) {
+        for (let i = 0; i < 4; i++) {
+          netState.W2[j][i] += netState.dW2[j][i];
+          netState.prev_dW2[j][i] = netState.dW2[j][i];
+        }
+      }
+
+      for (let j = 0; j < 3; j++) {
+        for (let i = 0; i < 3; i++) {
+          netState.W1[j][i] += netState.dW1[j][i];
+          netState.prev_dW1[j][i] = netState.dW1[j][i];
+        }
+      }
+
+      // Checagem de critério de parada (Livro Eq. 5.40)
+      const diffLoss = netState.prev_error_quad !== null ? Math.abs(netState.error_quad - netState.prev_error_quad) : 1.0;
+      netState.prev_error_quad = netState.error_quad;
+
+      netState.epoch++;
+      netState.historyLoss.push(netState.error_quad);
+      if (netState.historyLoss.length > netState.maxHistory) {
+        netState.historyLoss.shift();
+      }
+
+      // Verificação de parada:
+      // 1) Erro absoluto atingiu a tolerância: E <= epsilon
+      // 2) Variação entre épocas consecutivas abaixo da precisão: |E(t) - E(t-1)| <= epsilon (Eq. 5.40)
+      // 3) Limite de épocas atingido
+      if (netState.error_quad <= netState.epsilon) {
+        netState.converged = true;
+        netState.stopReason = `Erro atingiu a precisão requerida (E = ${netState.error_quad.toFixed(6)} ≤ ε = ${netState.epsilon.toFixed(6)})`;
+      } else if (netState.epoch > 5 && diffLoss <= (netState.epsilon * 0.1)) {
+        netState.converged = true;
+        netState.stopReason = `Variação estagnada conforme Eq. 5.40 (|ΔE| = ${diffLoss.toExponential(3)} ≤ ε)`;
+      } else if (netState.epoch >= netState.max_epochs) {
+        netState.converged = true;
+        netState.stopReason = `Limite máximo de ${netState.max_epochs} épocas atingido`;
+      } else {
+        netState.converged = false;
+        netState.stopReason = '';
+      }
+
+      netState.phase = 'backward_done';
+      updateUI();
+
+      return netState.converged;
+    }
+
+    function runSingleFullEpoch() {
+      computeForward();
+      const stopped = computeBackward();
+      if (stopped && autoTrainTimer) {
+        stopAutoTrain(netState.stopReason);
+      }
+      return stopped;
+    }
+
+    function stepForwardInteractive() {
+      computeForward();
+      setPhaseIndicator('forward', 'Fase 1: Forward Concluído');
+      document.getElementById('stepSubBadge').innerHTML = '<span style="color:var(--accent-forward)">✓ Sinais propagados até a saída Y⁽³⁾</span>';
+      highlightMathBox('forward');
+    }
+
+    function stepBackwardInteractive() {
+      if (netState.phase !== 'forward_done') {
+        computeForward();
+      }
+      const stopped = computeBackward();
+      if (stopped) {
+        setPhaseIndicator('idle', 'Convergido / Meta Atingida');
+        document.getElementById('stepSubBadge').innerHTML = `<span style="color:var(--accent-forward)">✓ Meta atingida: ${netState.stopReason}</span>`;
+      } else {
+        setPhaseIndicator('backward', 'Fase 2: Backward Concluído');
+        document.getElementById('stepSubBadge').innerHTML = '<span style="color:var(--accent-backward)">✓ δ⁽³⁾ ➔ δ⁽²⁾ ➔ δ⁽¹⁾ calculados e matrizes W atualizadas</span>';
+      }
+      highlightMathBox('backward');
+    }
+
+    function stopAutoTrain(reason) {
+      if (autoTrainTimer) {
+        clearInterval(autoTrainTimer);
+        autoTrainTimer = null;
+      }
+      const btn = document.getElementById('btnAutoTrain');
+      btn.innerHTML = '▶ Iniciar Treino';
+      btn.classList.remove('btn-backward');
+      btn.classList.add('btn-secondary');
+      if (reason) {
+        setPhaseIndicator('idle', 'Convergência Atingida');
+        document.getElementById('stepSubBadge').innerHTML = `<span style="color:var(--accent-forward)">✓ ${reason}</span>`;
+      } else {
+        setPhaseIndicator('idle', 'Pausado');
+      }
+    }
+
+    function toggleAutoTrain() {
+      if (autoTrainTimer) {
+        stopAutoTrain();
+      } else {
+        // Se já atingiu a precisão mas o usuário clicou em treinar de novo, aumenta épocas ou reseta status
+        if (netState.converged && netState.error_quad <= netState.epsilon) {
+          netState.epsilon = netState.epsilon / 2;
+          document.getElementById('in_epsilon').value = netState.epsilon.toFixed(6);
+          netState.converged = false;
+        }
+
+        const btn = document.getElementById('btnAutoTrain');
+        btn.innerHTML = '⏸ Pausar Treino';
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-backward');
+        setPhaseIndicator('forward', 'Treinando em Loop');
+
+        autoTrainTimer = setInterval(() => {
+          const reached = runSingleFullEpoch();
+          if (reached) {
+            stopAutoTrain(netState.stopReason);
+          }
+        }, 80);
+      }
+    }
+
+    function runTrainBatch(steps) {
+      let stopped = false;
+      for (let i = 0; i < steps; i++) {
+        computeForward();
+        stopped = computeBackward();
+        if (stopped) break;
+      }
+      if (stopped) {
+        stopAutoTrain(netState.stopReason);
+      } else {
+        setPhaseIndicator('idle', `+${steps} épocas executadas`);
+      }
+    }
+
+    /* ==========================================================================
+       SINCRONIZAÇÃO E INTERFACE
+       ========================================================================== */
+    function readInputs() {
+      netState.x1 = parseFloat(document.getElementById('in_x1').value) || 0;
+      netState.x2 = parseFloat(document.getElementById('in_x2').value) || 0;
+      netState.d  = parseFloat(document.getElementById('in_d').value)  || 0;
+      netState.eta = parseFloat(document.getElementById('in_eta').value) || 0.1;
+      netState.alpha = parseFloat(document.getElementById('in_alpha').value) || 0;
+      netState.epsilon = parseFloat(document.getElementById('in_epsilon').value) || 0.0001;
+      netState.max_epochs = parseInt(document.getElementById('in_max_epochs').value, 10) || 5000;
+      netState.activation = document.getElementById('in_activation').value;
+    }
+
+    function setPhaseIndicator(type, label) {
+      const el = document.getElementById('phaseIndicator');
+      el.className = 'phase-indicator ' + type;
+      document.getElementById('phaseText').innerText = label;
+    }
+
+    function highlightMathBox(phase) {
+      const boxF = document.getElementById('boxForwardMath');
+      const boxB = document.getElementById('boxBackwardMath');
+      if (phase === 'forward') {
+        boxF.classList.add('active-forward');
+        boxB.classList.remove('active-backward');
+      } else {
+        boxF.classList.remove('active-forward');
+        boxB.classList.add('active-backward');
+      }
+    }
+
+    function updateUI() {
+      // Métricas
+      document.getElementById('dispEpoch').innerText = netState.epoch;
+      document.getElementById('dispOutput').innerText = netState.Y3[0].toFixed(5);
+      document.getElementById('dispLinearError').innerText = (netState.error_lin >= 0 ? '+' : '') + netState.error_lin.toFixed(5);
+      document.getElementById('dispQuadError').innerText = netState.error_quad.toFixed(6);
+
+      // Status de Convergência no Cartão de Métricas
+      const convEl = document.getElementById('dispConvergence');
+      if (netState.error_quad <= netState.epsilon) {
+        convEl.innerHTML = `<span style="color:var(--accent-forward); font-weight:bold;">✓ Convergiu! (E ≤ ε)</span>`;
+      } else if (netState.converged) {
+        convEl.innerHTML = `<span style="color:var(--accent-warning); font-weight:bold;">Parou (${netState.stopReason})</span>`;
+      } else {
+        convEl.innerHTML = `<span style="color:#94a3b8;">E > ε (${(netState.error_quad / netState.epsilon).toFixed(1)}x)</span>`;
+      }
+
+      // Raio-X Matemático da Camada 1
+      document.getElementById('txtL1_calc').innerHTML = `
+        I₁⁽¹⁾ = (${netState.W1[0][0].toFixed(2)}·(-1)) + (${netState.W1[0][1].toFixed(2)}·${netState.x1.toFixed(2)}) + (${netState.W1[0][2].toFixed(2)}·${netState.x2.toFixed(2)}) = <b>${netState.I1[0].toFixed(4)}</b> ➔ Y₁⁽¹⁾ = <b>${netState.Y1[0].toFixed(4)}</b><br>
+        I₂⁽¹⁾ = (${netState.W1[1][0].toFixed(2)}·(-1)) + (${netState.W1[1][1].toFixed(2)}·${netState.x1.toFixed(2)}) + (${netState.W1[1][2].toFixed(2)}·${netState.x2.toFixed(2)}) = <b>${netState.I1[1].toFixed(4)}</b> ➔ Y₂⁽¹⁾ = <b>${netState.Y1[1].toFixed(4)}</b><br>
+        I₃⁽¹⁾ = (${netState.W1[2][0].toFixed(2)}·(-1)) + (${netState.W1[2][1].toFixed(2)}·${netState.x1.toFixed(2)}) + (${netState.W1[2][2].toFixed(2)}·${netState.x2.toFixed(2)}) = <b>${netState.I1[2].toFixed(4)}</b> ➔ Y₃⁽¹⁾ = <b>${netState.Y1[2].toFixed(4)}</b>
+      `;
+
+      // Raio-X Matemático da Camada 2
+      document.getElementById('txtL2_calc').innerHTML = `
+        I₁⁽²⁾ = (${netState.W2[0][0].toFixed(2)}·(-1)) + (${netState.W2[0][1].toFixed(2)}·${netState.Y1[0].toFixed(2)}) + (${netState.W2[0][2].toFixed(2)}·${netState.Y1[1].toFixed(2)}) + (${netState.W2[0][3].toFixed(2)}·${netState.Y1[2].toFixed(2)}) = <b>${netState.I2[0].toFixed(4)}</b> ➔ Y₁⁽²⁾ = <b>${netState.Y2[0].toFixed(4)}</b><br>
+        I₂⁽²⁾ = (${netState.W2[1][0].toFixed(2)}·(-1)) + (${netState.W2[1][1].toFixed(2)}·${netState.Y1[0].toFixed(2)}) + (${netState.W2[1][2].toFixed(2)}·${netState.Y1[1].toFixed(2)}) + (${netState.W2[1][3].toFixed(2)}·${netState.Y1[2].toFixed(2)}) = <b>${netState.I2[1].toFixed(4)}</b> ➔ Y₂⁽²⁾ = <b>${netState.Y2[1].toFixed(4)}</b>
+      `;
+
+      // Raio-X Matemático da Camada 3 (Saída)
+      document.getElementById('txtL3_calc').innerHTML = `
+        I₁⁽³⁾ = (${netState.W3[0][0].toFixed(2)}·(-1)) + (${netState.W3[0][1].toFixed(2)}·${netState.Y2[0].toFixed(3)}) + (${netState.W3[0][2].toFixed(2)}·${netState.Y2[1].toFixed(3)}) = <b>${netState.I3[0].toFixed(4)}</b>
+      `;
+      document.getElementById('txtYout').innerText = netState.Y3[0].toFixed(5);
+      document.getElementById('txtErrorLinear').innerText = `${netState.d.toFixed(2)} - ${netState.Y3[0].toFixed(5)} = ${netState.error_lin.toFixed(5)}`;
+
+      // Raio-X Backward
+      const gP3 = actDeriv(netState.I3[0], netState.Y3[0]);
+      document.getElementById('txtDelta3').innerText = 
+        `δ₁⁽³⁾ = (${netState.error_lin.toFixed(4)}) · g'(${netState.I3[0].toFixed(3)}) [${gP3.toFixed(4)}] = ${netState.delta3[0].toFixed(5)}`;
+
+      document.getElementById('txtDelta2_calc').innerHTML = `
+        δ₁⁽²⁾ = g'(${netState.I2[0].toFixed(2)})·(δ₁⁽³⁾·W₁₁⁽³⁾) = ${actDeriv(netState.I2[0], netState.Y2[0]).toFixed(3)} · (${netState.delta3[0].toFixed(4)} · ${netState.W3[0][1].toFixed(2)}) = <b>${netState.delta2[0].toFixed(5)}</b><br>
+        δ₂⁽²⁾ = g'(${netState.I2[1].toFixed(2)})·(δ₁⁽³⁾·W₁₂⁽³⁾) = ${actDeriv(netState.I2[1], netState.Y2[1]).toFixed(3)} · (${netState.delta3[0].toFixed(4)} · ${netState.W3[0][2].toFixed(2)}) = <b>${netState.delta2[1].toFixed(5)}</b>
+      `;
+
+      document.getElementById('txtDelta1_calc').innerHTML = `
+        δ₁⁽¹⁾ = g'(${netState.I1[0].toFixed(2)})·[δ₁⁽²⁾·W₁₁⁽²⁾ + δ₂⁽²⁾·W₂₁⁽²⁾] = <b>${netState.delta1[0].toFixed(5)}</b><br>
+        δ₂⁽¹⁾ = g'(${netState.I1[1].toFixed(2)})·[δ₁⁽²⁾·W₁₂⁽²⁾ + δ₂⁽²⁾·W₂₂⁽²⁾] = <b>${netState.delta1[1].toFixed(5)}</b><br>
+        δ₃⁽¹⁾ = g'(${netState.I1[2].toFixed(2)})·[δ₁⁽²⁾·W₁₃⁽²⁾ + δ₂⁽²⁾·W₂₃⁽²⁾] = <b>${netState.delta1[2].toFixed(5)}</b>
+      `;
+
+      // Tabelas de Matrizes
+      renderMatricesDisplay();
+
+      // Gráficos
+      drawLossChart();
+    }
+
+    function renderMatricesDisplay() {
+      const el = document.getElementById('matricesDisplay');
+      el.innerHTML = `
+        <div>
+          <b style="color:var(--node-h1);">W⁽¹⁾ (3x3):</b><br>
+          [ ${netState.W1[0].map(v => v.toFixed(3)).join(', ')} ]<br>
+          [ ${netState.W1[1].map(v => v.toFixed(3)).join(', ')} ]<br>
+          [ ${netState.W1[2].map(v => v.toFixed(3)).join(', ')} ]
+        </div>
+        <div>
+          <b style="color:var(--node-h2);">W⁽²⁾ (2x4):</b><br>
+          [ ${netState.W2[0].map(v => v.toFixed(3)).join(', ')} ]<br>
+          [ ${netState.W2[1].map(v => v.toFixed(3)).join(', ')} ]
+        </div>
+        <div>
+          <b style="color:var(--node-output);">W⁽³⁾ (1x3):</b><br>
+          [ ${netState.W3[0].map(v => v.toFixed(3)).join(', ')} ]
+        </div>
+      `;
+    }
+
+    /* ==========================================================================
+       PRESETS
+       ========================================================================== */
+    function loadPreset(name) {
+      if (name === 'book') {
+        document.getElementById('in_x1').value = "0.30";
+        document.getElementById('in_x2').value = "0.70";
+        document.getElementById('in_d').value = "0.85";
+        document.getElementById('in_eta').value = "0.30";
+        document.getElementById('in_alpha').value = "0.00";
+        document.getElementById('in_activation').value = "tanh";
+
+        netState.W1 = JSON.parse(JSON.stringify(bookDefaults.W1));
+        netState.W2 = JSON.parse(JSON.stringify(bookDefaults.W2));
+        netState.W3 = JSON.parse(JSON.stringify(bookDefaults.W3));
+      } else if (name === 'random') {
+        const rand = () => (Math.random() * 1.4 - 0.7);
+        netState.W1 = [
+          [rand(), rand(), rand()],
+          [rand(), rand(), rand()],
+          [rand(), rand(), rand()]
+        ];
+        netState.W2 = [
+          [rand(), rand(), rand(), rand()],
+          [rand(), rand(), rand(), rand()]
+        ];
+        netState.W3 = [
+          [rand(), rand(), rand()]
+        ];
+      }
+
+      netState.prev_dW1 = [[0,0,0],[0,0,0],[0,0,0]];
+      netState.prev_dW2 = [[0,0,0,0],[0,0,0,0]];
+      netState.prev_dW3 = [[0,0,0]];
+      netState.epoch = 0;
+      netState.historyLoss = [];
+
+      computeForward();
+      setPhaseIndicator('idle', 'Padrão do Livro Carregado');
+      document.getElementById('stepSubBadge').innerHTML = '<span>Rede pronta para simulação</span>';
+    }
+
+    document.getElementById('btnReset').addEventListener('click', () => {
+      loadPreset('book');
+    });
+
+    ['in_x1', 'in_x2', 'in_d', 'in_eta', 'in_alpha', 'in_epsilon', 'in_max_epochs', 'in_activation'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => {
+        readInputs();
+        netState.converged = false;
+        netState.stopReason = '';
+        computeForward();
+      });
+    });
+
+    /* ==========================================================================
+       RENDERIZADOR VISUAL (CANVAS DINÂMICO 4 CAMADAS)
+       ========================================================================== */
+    const canvas = document.getElementById('networkCanvas');
+    const ctx = canvas.getContext('2d');
+    let hoveredElement = null;
+
+    function resizeCanvas() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function getNodeLayout() {
+      const w = canvas.width;
+      const h = canvas.height;
+
+      const col0_x = w * 0.12; // Entradas
+      const col1_x = w * 0.38; // Oculta 1 (3 neurônios)
+      const col2_x = w * 0.65; // Oculta 2 (2 neurônios)
+      const col3_x = w * 0.88; // Saída (1 neurônio)
+
+      return {
+        // Bias fixos
+        x0: { id: 'x0', name: 'x₀', val: -1.0, x: col0_x, y: h * 0.18, r: 16, type: 'bias', color: '#64748b' },
+        in1: { id: 'in1', name: 'x₁', val: netState.x1, x: col0_x, y: h * 0.48, r: 22, type: 'input', color: '#0ea5e9' },
+        in2: { id: 'in2', name: 'x₂', val: netState.x2, x: col0_x, y: h * 0.78, r: 22, type: 'input', color: '#0ea5e9' },
+
+        // Camada Oculta 1 (3 neurônios)
+        h1_1: { id: 'h1_1', name: 'H₁⁽¹⁾', I: netState.I1[0], Y: netState.Y1[0], delta: netState.delta1[0], biasW: netState.W1[0][0], x: col1_x, y: h * 0.25, r: 24, type: 'h1', color: '#8b5cf6' },
+        h1_2: { id: 'h1_2', name: 'H₂⁽¹⁾', I: netState.I1[1], Y: netState.Y1[1], delta: netState.delta1[1], biasW: netState.W1[1][0], x: col1_x, y: h * 0.50, r: 24, type: 'h1', color: '#8b5cf6' },
+        h1_3: { id: 'h1_3', name: 'H₃⁽¹⁾', I: netState.I1[2], Y: netState.Y1[2], delta: netState.delta1[2], biasW: netState.W1[2][0], x: col1_x, y: h * 0.75, r: 24, type: 'h1', color: '#8b5cf6' },
+
+        // Camada Oculta 2 (2 neurônios)
+        h2_1: { id: 'h2_1', name: 'H₁⁽²⁾', I: netState.I2[0], Y: netState.Y2[0], delta: netState.delta2[0], biasW: netState.W2[0][0], x: col2_x, y: h * 0.35, r: 26, type: 'h2', color: '#a855f7' },
+        h2_2: { id: 'h2_2', name: 'H₂⁽²⁾', I: netState.I2[1], Y: netState.Y2[1], delta: netState.delta2[1], biasW: netState.W2[1][0], x: col2_x, y: h * 0.65, r: 26, type: 'h2', color: '#a855f7' },
+
+        // Camada de Saída (1 neurônio)
+        out1: { id: 'out1', name: 'Y₁⁽³⁾', I: netState.I3[0], Y: netState.Y3[0], delta: netState.delta3[0], biasW: netState.W3[0][0], d: netState.d, x: col3_x, y: h * 0.50, r: 28, type: 'out', color: '#ec4899' }
+      };
+    }
+
+    function drawNetwork() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const N = getNodeLayout();
+      animPulse += 0.04;
+
+      // Montagem de conexões
+      const connections = [];
+
+      // Conexões Entrada -> Camada 1
+      const inputs = [N.x0, N.in1, N.in2];
+      const h1Nodes = [N.h1_1, N.h1_2, N.h1_3];
+      for (let j = 0; j < 3; j++) {
+        for (let i = 0; i < 3; i++) {
+          connections.push({
+            from: inputs[i],
+            to: h1Nodes[j],
+            weight: netState.W1[j][i],
+            name: `W${j+1},${i}⁽¹⁾`
+          });
+        }
+      }
+
+      // Conexões Camada 1 -> Camada 2 (com bias Y0(1) = -1)
+      const h2Nodes = [N.h2_1, N.h2_2];
+      for (let j = 0; j < 2; j++) {
+        for (let i = 1; i <= 3; i++) {
+          connections.push({
+            from: h1Nodes[i - 1],
+            to: h2Nodes[j],
+            weight: netState.W2[j][i],
+            name: `W${j+1},${i}⁽²⁾`
+          });
+        }
+      }
+
+      // Conexões Camada 2 -> Camada 3 (com bias Y0(2) = -1)
+      for (let i = 1; i <= 2; i++) {
+        connections.push({
+          from: h2Nodes[i - 1],
+          to: N.out1,
+          weight: netState.W3[0][i],
+          name: `W1,${i}⁽³⁾`
+        });
+      }
+
+      // 1. DESENHAR SINAPSES
+      connections.forEach(conn => {
+        const isHovered = hoveredElement && hoveredElement.type === 'conn' && hoveredElement.name === conn.name;
+        
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(conn.from.x, conn.from.y);
+        ctx.lineTo(conn.to.x, conn.to.y);
+
+        const thickness = Math.min(Math.max(Math.abs(conn.weight) * 3.0, 1.2), 5.5);
+        ctx.lineWidth = isHovered ? thickness + 2.5 : thickness;
+
+        if (conn.weight >= 0) {
+          ctx.strokeStyle = isHovered ? '#38bdf8' : 'rgba(56, 189, 248, 0.35)';
+        } else {
+          ctx.strokeStyle = isHovered ? '#f43f5e' : 'rgba(244, 63, 94, 0.35)';
+        }
+        ctx.stroke();
+
+        // Partículas luminosas indicando o fluxo
+        if (netState.phase === 'forward_done' || netState.phase === 'backward_done') {
+          const isBackward = netState.phase === 'backward_done';
+          const t = (Math.sin(animPulse + (conn.weight * 2.5)) + 1) / 2;
+          
+          let pX, pY;
+          if (!isBackward) {
+            pX = conn.from.x + (conn.to.x - conn.from.x) * t;
+            pY = conn.from.y + (conn.to.y - conn.from.y) * t;
+            ctx.fillStyle = '#34d399';
+            ctx.shadowColor = '#34d399';
+          } else {
+            pX = conn.to.x + (conn.from.x - conn.to.x) * t;
+            pY = conn.to.y + (conn.from.y - conn.to.y) * t;
+            ctx.fillStyle = '#fb7185';
+            ctx.shadowColor = '#fb7185';
+          }
+
+          ctx.shadowBlur = 6;
+          ctx.beginPath();
+          ctx.arc(pX, pY, 2.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      });
+
+      // 2. DESENHAR NÓS
+      Object.values(N).forEach(node => {
+        const isHovered = hoveredElement && hoveredElement.type === 'node' && hoveredElement.id === node.id;
+
+        ctx.save();
+        const gradient = ctx.createRadialGradient(node.x, node.y, node.r * 0.3, node.x, node.y, node.r * 1.2);
+        gradient.addColorStop(0, node.color + 'cc');
+        gradient.addColorStop(1, 'rgba(15, 23, 42, 0.95)');
+
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, isHovered ? node.r + 3 : node.r, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        ctx.lineWidth = isHovered ? 2.5 : 1.8;
+        ctx.strokeStyle = isHovered ? '#ffffff' : node.color;
+        ctx.shadowColor = node.color;
+        ctx.shadowBlur = isHovered ? 14 : 5;
+        ctx.stroke();
+        ctx.restore();
+
+        // Rótulos dos nós
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = 'bold 11px "Plus Jakarta Sans"';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(node.name, node.x, node.y - 3);
+
+        ctx.font = '9px "JetBrains Mono"';
+        ctx.fillStyle = '#e2e8f0';
+
+        if (node.type === 'bias') {
+          ctx.fillText('-1', node.x, node.y + 7);
+        } else if (node.type === 'input') {
+          ctx.fillText(`x=${node.val.toFixed(2)}`, node.x, node.y + 8);
+        } else {
+          ctx.fillText(`Y=${node.Y.toFixed(2)}`, node.x, node.y + 8);
+
+          // Sub-informação (Delta de retropropagação)
+          if (netState.phase === 'backward_done' || netState.epoch > 0) {
+            ctx.fillStyle = '#fb7185';
+            ctx.fillText(`δ=${node.delta.toFixed(3)}`, node.x, node.y + node.r + 13);
+          }
+        }
+        ctx.restore();
+      });
+
+      requestAnimationFrame(drawNetwork);
+    }
+
+    /* ==========================================================================
+       DETECÇÃO DE MOUSE E TOOLTIP INTERATIVO NO CANVAS
+       ========================================================================== */
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const nodes = getNodeLayout();
+      const tooltip = document.getElementById('hoverTooltip');
+
+      let found = null;
+      for (const [key, node] of Object.entries(nodes)) {
+        const dist = Math.hypot(mouseX - node.x, mouseY - node.y);
+        if (dist <= node.r + 4) {
+          found = { type: 'node', ...node };
+          break;
+        }
+      }
+
+      hoveredElement = found;
+
+      if (found) {
+        tooltip.style.display = 'block';
+        tooltip.style.left = (e.clientX + 15) + 'px';
+        tooltip.style.top = (e.clientY + 15) + 'px';
+
+        if (found.type === 'node') {
+          if (found.type === 'bias') {
+            tooltip.innerHTML = `
+              <div style="font-weight:bold; color:#94a3b8;">Entrada de Limiar (${found.name})</div>
+              Sinal constante: <b>-1.0</b> (Pesos ponderados em Wⱼ,₀)
+            `;
+          } else if (found.type === 'input') {
+            tooltip.innerHTML = `
+              <div style="font-weight:bold; color:#38bdf8;">Entrada ${found.name}</div>
+              Valor apresentado: <b>${found.val.toFixed(4)}</b>
+            `;
+          } else if (found.type === 'out') {
+            tooltip.innerHTML = `
+              <div style="font-weight:bold; color:#ec4899;">Neurônio de Saída (${found.name})</div>
+              Entrada Ponderada I₁⁽³⁾: <b>${found.I.toFixed(5)}</b><br>
+              Saída Ativada Y₁⁽³⁾ = tanh(I): <b>${found.Y.toFixed(5)}</b><br>
+              Alvo d₁: <b>${found.d.toFixed(4)}</b><br>
+              Erro e: <b>${(found.d - found.Y).toFixed(5)}</b><br>
+              Gradiente Local δ₁⁽³⁾: <b style="color:#fb7185">${found.delta.toFixed(5)}</b>
+            `;
+          } else if (found.type === 'h2') {
+            tooltip.innerHTML = `
+              <div style="font-weight:bold; color:#a855f7;">2ª Camada Oculta (${found.name})</div>
+              Entrada Ponderada Iⱼ⁽²⁾: <b>${found.I.toFixed(5)}</b><br>
+              Saída Ativada Yⱼ⁽²⁾ = tanh(I): <b>${found.Y.toFixed(5)}</b><br>
+              Gradiente Local δⱼ⁽²⁾: <b style="color:#fb7185">${found.delta.toFixed(5)}</b>
+            `;
+          } else {
+            tooltip.innerHTML = `
+              <div style="font-weight:bold; color:#8b5cf6;">1ª Camada Oculta (${found.name})</div>
+              Entrada Ponderada Iⱼ⁽¹⁾: <b>${found.I.toFixed(5)}</b><br>
+              Saída Ativada Yⱼ⁽¹⁾ = tanh(I): <b>${found.Y.toFixed(5)}</b><br>
+              Gradiente Local δⱼ⁽¹⁾: <b style="color:#fb7185">${found.delta.toFixed(5)}</b>
+            `;
+          }
+        }
+      } else {
+        tooltip.style.display = 'none';
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      document.getElementById('hoverTooltip').style.display = 'none';
+      hoveredElement = null;
+    });
+
+    /* ==========================================================================
+       GRÁFICO DO ERRO QUADRÁTICO
+       ========================================================================== */
+    function drawLossChart() {
+      const c = document.getElementById('chartCanvas');
+      const g = c.getContext('2d');
+      const w = c.width;
+      const h = c.height;
+
+      g.clearRect(0, 0, w, h);
+
+      if (netState.historyLoss.length < 2) {
+        g.fillStyle = '#64748b';
+        g.font = '10px "JetBrains Mono"';
+        g.textAlign = 'center';
+        g.fillText('Execute iterações para ver a descida...', w / 2, h / 2);
+        return;
+      }
+
+      const maxLoss = Math.max(...netState.historyLoss, 0.01);
+      const minLoss = Math.min(...netState.historyLoss);
+      document.getElementById('chartMinErr').innerText = `Mín: ${minLoss.toFixed(5)}`;
+
+      g.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      g.lineWidth = 1;
+      g.beginPath();
+      for (let y = 0; y < h; y += 25) {
+        g.moveTo(0, y); g.lineTo(w, y);
+      }
+      g.stroke();
+
+      g.beginPath();
+      const stepX = w / (netState.historyLoss.length - 1);
+
+      netState.historyLoss.forEach((loss, i) => {
+        const x = i * stepX;
+        const normY = (loss / maxLoss);
+        const y = h - 8 - (normY * (h - 18));
+
+        if (i === 0) g.moveTo(x, y);
+        else g.lineTo(x, y);
+      });
+
+      g.strokeStyle = '#f43f5e';
+      g.lineWidth = 2.2;
+      g.stroke();
+
+      g.lineTo(w, h);
+      g.lineTo(0, h);
+      g.closePath();
+      const grad = g.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, 'rgba(244, 63, 94, 0.25)');
+      grad.addColorStop(1, 'rgba(244, 63, 94, 0.0)');
+      g.fillStyle = grad;
+      g.fill();
+    }
+
+    window.onload = () => {
+      resizeCanvas();
+      loadPreset('book');
+      requestAnimationFrame(drawNetwork);
+    };
+  </script>
+</body>
+</html>
